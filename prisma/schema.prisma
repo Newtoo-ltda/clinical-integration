@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  name            String
+  password        String
+  photo           String?
+  first_access    Boolean           @default(true)
+  active          Boolean           @default(false)
+  whatsapp        String
+  plan            Plan              @relation(fields: [planId], references: [id])
+  planId          Int
+  street          String?
+  cep             String?
+  state           String?
+  neighborhood    String?
+  city            String?
+  cnes            String?
+  latitude        Float?
+  longitude       Float?
+  number          Int?
+  complement      String?
+  attendants      Attendant[]
+  professionals   Professional[]
+  specialties     String[]
+  procedures      Procedure[]
+  Schedules       Schedules[]
+  User            User[]
+  HealthInsurance HealthInsurance[]
+  PatientInfo     PatientInfo[]
+  Notification    Notification[]
+}
+
+model Notification {
+  id             Int           @id @default(autoincrement())
+  title          String
+  content        String
+  all            Boolean       @default(false)
+  Admin          Admin?        @relation(fields: [adminId], references: [id])
+  adminId        Int?
+  Professional   Professional? @relation(fields: [professionalId], references: [id])
+  professionalId Int?
+  Patient        PatientInfo?  @relation(fields: [patientId], references: [id])
+  patientId      Int?
+}
+
+model HealthInsurance {
+  id                 Int           @id @default(autoincrement())
+  name               String
+  registrationNumber String
+  grace              String?
+  Admin              Admin?        @relation(fields: [adminId], references: [id])
+  adminId            Int?
+  PatientInfo        PatientInfo[]
+}
+
+model Validation {
+  id    Int    @id @default(autoincrement())
+  email String
+  code  String
+}
+
+model Plan {
+  id        Int     @id @default(autoincrement())
+  pagarmeId String
+  name      String
+  value     Float
+  doctors   Int
+  Admin     Admin[]
+}
+
+model Attendant {
+  id       Int     @id @default(autoincrement())
+  name     String
+  photo    String?
+  email    String  @unique
+  password String
+  admin    Admin   @relation(fields: [adminId], references: [id])
+  adminId  Int
+}
+
+model Professional {
+  id             Int            @id @default(autoincrement())
+  name           String
+  photo          String?
+  email          String         @unique
+  specialties    String[]
+  openedSchedule Json[]
+  admin          Admin          @relation(fields: [adminId], references: [id])
+  adminId        Int
+  procedures     Procedure[]
+  Schedules      Schedules[]
+  Notification   Notification[]
+}
+
+model Procedure {
+  id           Int            @id @default(autoincrement())
+  name         String
+  value        Float
+  specialty    String
+  type         String
+  duration     Int
+  admin        Admin          @relation(fields: [adminId], references: [id])
+  adminId      Int
+  schedules    Schedules[]
+  Professional Professional[]
+}
+
+model Schedules {
+  id             Int          @id @default(autoincrement())
+  day            String
+  start          String
+  end            String
+  status         String
+  admin          Admin        @relation(fields: [adminId], references: [id])
+  adminId        Int
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  professionalId Int
+  patientInfo    PatientInfo?
+  procedure      Procedure    @relation(fields: [procedureId], references: [id])
+  procedureId    Int
+}
+
+model PatientInfo {
+  id                Int              @id @default(autoincrement())
+  name              String?
+  age               Int?
+  healthInsurance   HealthInsurance? @relation(fields: [healthInsuranceId], references: [id])
+  healthInsuranceId Int?
+  whatsapp          String?
+  schedule          Schedules        @relation(fields: [scheduleId], references: [id])
+  scheduleId        Int              @unique
+  admin             Admin            @relation(fields: [adminId], references: [id])
+  adminId           Int
+  Notification      Notification[]
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  office   String
+  email    String @unique
+  password String
+  admin    Admin  @relation(fields: [adminId], references: [id])
+  adminId  Int
+}
