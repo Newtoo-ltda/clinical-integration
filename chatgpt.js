@@ -3,7 +3,7 @@ const axios = require("axios");
 const api = require('./Service/api');
 
 const openai = new OpenAI({
-  apiKey: "SUA-CHAVE-API-AQUI"
+  apiKey: "sk-proj-fzzO7kJIpX1x4JeUoqatT3BlbkFJKY7h9DWf2PkhU6g4s9fI"
 });
 
 const cancelAppointment = async (appointmentId, client, from) => {
@@ -25,13 +25,7 @@ const confirmAppointment = async (appointmentId, client, from) => {
   }
 };
 
-const contarTokens = (data) => {
-  const stringData = JSON.stringify(data);
-  return stringData.length; 
-};
-
 const agent = new (require("https").Agent)({ keepAlive: true });
-
 
 const procedimentos = async () => {
   try {
@@ -76,7 +70,6 @@ const procedimentos = async () => {
   }
 };
 
-
 const especialidades = async () => {
   try {
       const response = await axios.get(
@@ -97,7 +90,6 @@ const especialidades = async () => {
   }
 };
 
-
 const convenios = async () => {
     try {
         const response = await axios.get("https://cpp.focuscw.com.br/datasnap/rest/TEntityController/convenios", { timeout: 120000, httpsAgent: agent });
@@ -106,7 +98,7 @@ const convenios = async () => {
             nomeConvenio: convenio.nomeConvenio
         }));
         //console.log(filteredData);
-        const tokenCount = contarTokens(filteredData);
+        //const tokenCount = contarTokens(filteredData);
         //console.log("Procedimentos token count:", tokenCount);
         return filteredData
     } catch (error) {
@@ -139,7 +131,7 @@ const profissionais = async () => {
           })) || []
       }));
 
-        const tokenCount = contarTokens(filteredData);
+       // const tokenCount = contarTokens(filteredData);
         //console.log("Profissionais token count:", tokenCount);
        // console.log(JSON.stringify(filteredData, null, 2));
        return filteredData
@@ -149,7 +141,6 @@ const profissionais = async () => {
 };
 
 //Está me retornando corretamente os profissionais e suas respectivas especialidades. O problema é que as especialidades não estão ligadas aos procedimentos. Como resolver isso ?
-
 
 const clinicInfo = {
   "clinic": {
@@ -161,6 +152,19 @@ const clinicInfo = {
     ]
   }
 };
+
+function formatClinicInfo(clinicInfo) {
+  const { name, units } = clinicInfo.clinic;
+  
+  let formattedInfo = `Clínica: ${name}\n`;
+  formattedInfo += "Unidades:\n";
+  
+  units.forEach(unit => {
+    formattedInfo += `  - ${unit.name} (ID: ${unit.id})\n    Endereço: ${unit.address}\n`;
+  });
+  
+  return formattedInfo;
+}
 function getDayOfWeek(date) {
   const dias = [ 
       "SEGUNDA FEIRA", 
@@ -232,7 +236,7 @@ const format1Procedures = procedimentosData.map(p =>
               const dataAtual = horaBrasilia.toISOString().split("T")[0]; // formato YYYY-MM-DD
               const horaAtual = horaBrasilia.toTimeString().split(" ")[0]; // formato HH:MM:SS
       
-              console.log("Agora:", agora);
+              //console.log("Agora:", agora);
               console.log("A data atual é", dataAtual, "e a hora atual é", horaAtual);
       
               // Define se a busca será filtrada por uma data específica ou não
@@ -328,9 +332,6 @@ const format1Procedures = procedimentosData.map(p =>
               return [];
           }
       }
-      
-      
-      
       async function buscarHorariosProfissional(professionalId, procedureId) {
         try {
             console.log(`🔍 Buscando horários para Profissional: ${professionalId}, Especialidade: ${procedureId}`);
@@ -384,7 +385,6 @@ const format1Procedures = procedimentosData.map(p =>
             return [];
         }
     }
-
         async function processaEscolhaHorario(horaUsuario) {
           try {
               console.log(`🔍 Buscando horário correspondente para: ${horaUsuario}`);
@@ -529,7 +529,6 @@ const format1Procedures = procedimentosData.map(p =>
     ${userSession.context}
     `;
 
-    // O context está ficando muito grande. Precisamos encontrar uma forma de fragmentar isso.
 
     const today = new Date()
     function getFormattedDate() {
@@ -654,6 +653,7 @@ const format1Procedures = procedimentosData.map(p =>
                 Exemplo 9: "Quero marcar um pediatra para meu filho" -> 16383
                 Exemplo 10: "Quero fazer uma biópsia" -> 2167
                 Exemplo 11: "Voces tem otorrino?" -> 16366
+                Exemplo 12: "eu queria o combo CONSULTA mais PREVENTIVO " -> 15993
                 Preste atenção ao contexto para não ficar atualizando o tempo todo. Só passe o procedimetno que o paciente EXPLICITAMENTE solicitou. Não atualize o ID se o atual (${userSession.idConsulta}) ainda for válido.
                 Se não identificar nenhum procedimento, retorne "null".
                 Procedimentos disponíveis: ${format1Procedures}
@@ -905,6 +905,75 @@ const format1Procedures = procedimentosData.map(p =>
   let completionHorarios = [];
   let agendaData;
 
+  const identificacaoValor = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+        {
+            role: "system",
+            content: `Você é um assistente de uma clínica. Identifique se o usuário perguntou sobre o valor da consulta, exame ou procedimento. Responda apenas 'true' ou 'false'. 
+            Exemplo: qual o valor ? -> 'true'
+            Exemplo 2: Qual o valor do ultrassom ? -> 'true' 
+            Exemplo 3: Quero um psicologo-> 'false'
+            contexto: ${userSession.context}
+            `
+        },
+        {
+            role: "user",
+            content: body,
+        },
+    ],
+});
+let identificarIntencaoDeValor = identificacaoValor.choices[0].message.content
+console.log("função identificar se o paciente quer o valor foi retornada", identificarIntencaoDeValor )
+
+if (identificarIntencaoDeValor === 'true'){
+  console.log("A função de identificar valor foi chamada")
+// Etapa 2: Verificar se o valor já está na sessão
+if (userSession.valor !== null) {
+console.log("Já está preenchido")
+return `Olhando no sistema, percebi que o valor do serviço escolhido é R$ ${userSession.valor}. Deseja prosseguir para o agendamento ?`;
+
+}
+
+// Etapa 3: Verificar se todos os dados necessários estão preenchidos
+if (userSession.convenioId === null) {
+console.log("Os dados estão faltantes")
+return "Para verificar o valor, preciso que você me informe se deseja fazer pelo particular ou plano."
+
+} else if (!userSession.idUnidade) {
+return "Para verificar o valor, preciso que você me informe em qual unidade gostaria de ser atendido(a).";
+
+} else if (!userSession.idConsulta) {
+await client.addOrRemoveLabels(from, [{labelId: '7' , type:'add'}]);
+ativarAtendimentoHumano(adminId, from)
+return "Não consegui identificar o valor do que você está buscando em nosso sistema. Porém, tenho certeza que uma atendente humana irá conseguir te auxiliar. Por isso, estou te encaminhando nesse momento para uma atendente humana. Aguarde um instante 😊 ";
+
+}
+
+
+try {
+if (userSession.convenioId == 0) {
+console.log("📌 convenioId é 0. Atualizando para unidade correta...");
+
+if (userSession.idUnidade == 1) {
+userSession.convenioId = 66;
+} else if (userSession.idUnidade == 2) {
+userSession.convenioId = 67;
+} else if (userSession.idUnidade == 3) {
+userSession.convenioId = 79;
+}} else {
+getValorByConvenio();
+}
+
+} catch (error) {
+console.error("Erro ao buscar valor da consulta:", error);
+await client.addOrRemoveLabels(from, [{labelId: '7' , type:'add'}]);
+ativarAtendimentoHumano(adminId, from)
+return "Para uma melhor experiência e precisão estamos te encaminhando para uma atendente humana .";
+}
+}
+
+
   if(userSession.procedureId && userSession.professionalId && !userSession.idUnidade){
     console.log("Buscando horários disponíveis p/ profissional desejado...");
     try{
@@ -1097,7 +1166,6 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
           console.log("Data inválida detectada:", dataNascimento);
         }
       
-
         const paramsAtendente = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [
@@ -1135,6 +1203,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
           return;
         }
 
+      
 
 
     if (userSession.name && userSession.idUnidade && userSession.idAgenda && userSession.date && userSession.procedureId && userSession.nascimento && userSession.agendado == false) {
@@ -1196,8 +1265,8 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
               {
                 role: "system",
                 content: `Você é um assistente de uma clínica. 
-                          Quero que gere uma mensagem dizendo que a consulta esta marcada. A mensagem tem que conter data, hora, dia da semana, nome do Profissional, valor. Utilize como mensagem final a frase: "*CPP \n cuidando sempre de você 😊*" NUNCA USE "*" , "**" OU ATÉ MESMO "#"
-                          A data do agendamento é ${formatarData(userSession.date, "extenso")}, com início às ${userSession.horaAgenda}H o profissional é ${userSession.professionalId} e o valor é R$ ${userSession.valor} ( Nunca informe o valor null ). NUNCA USE NEGRITO, ASTERÍSCO, ITÁLICO, SUBLINHADO, HASHTAGS OU QUALQUER TIPO DE FORMATAÇÃO ESPECIAL/SÍMBOLO DE MARCAÇÃO EM NENHUMA DAS MENSAGENS E QUANDO FOR MANDAR A MENSAGEM DE CONFIRMAÇÃO LEMBRE-SE DE INCLUIR A DATA, HORÁRIO, UNIDADE, MÉDICO E VALOR ( e falar que o atendimento é por ordem de chegada ). Contexto da conversa: ${userSession.context}.
+                          Quero que gere uma mensagem dizendo que a consulta esta marcada. A mensagem tem que conter data, hora, dia da semana, nome do Profissional. Utilize como mensagem final a frase: "*CPP \n cuidando sempre de você 😊*" NUNCA USE "*" , "**" OU ATÉ MESMO "#"
+                          A data do agendamento é ${formatarData(userSession.date, "extenso")}, com início às ${userSession.horaAgenda}H o profissional é ${userSession.professionalId}. NUNCA USE NEGRITO, ASTERÍSCO, ITÁLICO, SUBLINHADO, HASHTAGS OU QUALQUER TIPO DE FORMATAÇÃO ESPECIAL/SÍMBOLO DE MARCAÇÃO EM NENHUMA DAS MENSAGENS E QUANDO FOR MANDAR A MENSAGEM DE CONFIRMAÇÃO LEMBRE-SE DE INCLUIR A DATA, HORÁRIO, UNIDADE, MÉDICO ( e falar que o atendimento é por ordem de chegada ). Contexto da conversa: ${userSession.context}.
                          `
               },
               {
@@ -1216,6 +1285,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
         } catch (error) {
           if (error.response && error.response.status === 400) {
             await client.sendText(from, 'Desculpe, não conseguimo realizar o seu agendamento. Para te ajudar com esse processo, estou te encaminhando para uma atendente humana');
+            await client.addOrRemoveLabels(from, [{labelId: '7' , type:'add'}]);
             ativarAtendimentoHumano(adminId, from)
             console.log("Não marcou")
             return
@@ -1226,14 +1296,16 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
       }
     }
 
+    let response;
 
+do {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-  content: `Você é um assistente virtual da CPP ( Se apresente para o usuário quando o usuário mandar a primeira mensagem ).Sempre se apresente como assistente virtual da CPP, não Clinica Popular de Petrolina. Sua função é atender os clientes, marcar consultas e exames, e tirar dúvidas gerais. Responda de maneira humanizada e suave, mas NÃO EXAGERE NO USO DE EMOJIS.NUNCA USE "*" , "**" OU ATÉ MESMO "#". OBSERVAÇÃO IMPORTANTE: VOCE SÓ PODE DEIXAR O PACIENTE MARCAR UMA CONSULTA OU PROCEDIMENTO QUE ESTEJAM DENTRO DAS CADASTRADAS NA CLÍNICA EM ${format1Procedures}. Caso o paciente queira marcar algo fora dessa lista, diga que voce como IA não está reconhecendo a consulta mas que para ele ter a melhor experiencia, precisa falar com uma atendente humana ( pergunte se ele gostaria de ser atendido por uma atendente humana). LEMBRE SEMPRE que agora é ${today} e FIQUE EM MENTE QUE HOJE é ${dateOnly}. Caso esteja mandando a mensagem de confirmação de consulta, lembre de adicionar no final o SLOGAN "*CPP \n cuidando sempre de você 😊*". NUNCA em NENHUMA hipótese fale que voce é GPT. Tenha em mente que para marcar um exame, temos que ter em mente a especialidade(id) escolhido pelo paciente, data da consulta, CPF, nome completo e data de nascimento do paciente.  Lembre-se também de sempre perguntar o nome completo da pessoa antes de tudo para ai sim proseguir com o fluxo de conversa (SEMPRE preste atencao no contexto da conversa pra ver se o nome ja não foi informado, pra NUNCA precisar ficar pedindo o nome toda hora ao usuario e sempre chame o paciente pelo primeiro nome). os convenios/planos disponíveis são ${formattedConvenios}. Caso o CPF seja igual a null, solicite o CPF do paciente. Aqui está o CPF: ${userSession.cpf}. NUNCA SE ESQUEÇA DE PERGUNTAR A DATA DE NASCIMENTO. Caso a data de nascimento seja igual a null, solicite também a data de nascimento do paciente. Aqui está a data de nascimento ${userSession.nascimento}.
-   Caso o paciente pergunte o valor da consulta, pode informar para ele o valor SEMPRE contido em: R$ ${userSession.valor} ( Nunca informe o valor null ), sempre antes de falar o valor verifique se o campo ${userSession.valor} esta preenchido, caso não esteja, pergunte sobre a unidade que ele gostaria de se consultar antes.NUNCA informe o valor null para o paciente. Caso o paciente manifeste interesse ESPECIFICAMENTE em marcar um RAIO X ( somente e explicitamente com o nome Raio X ), diga que para esse procedimento não é realizado o agendamento pois é realizado por ordem de chegada na unidade Joaquim Nabuco. SEMPRE antes de mandar os horários certifique-se de que o paciente já tenha respondido se quer marcar pelo particular ou pelo plano em ${userSession.convenioId}. NUNCA USE NEGRITO, ASTERÍSCO, ITÁLICO, SUBLINHADO, HASHTAGS OU QUALQUER TIPO DE FORMATAÇÃO ESPECIAL/SÍMBOLO DE MARCAÇÃO EM NENHUMA DAS MENSAGENS E QUANDO FOR MANDAR A MENSAGEM DE CONFIRMAÇÃO LEMBRE-SE DE INCLUIR A DATA, HORÁRIO, UNIDADE, MÉDICO E VALOR ( e falar que o atendimento é por ordem de chegada ).
+  content: `Você é um assistente virtual da CPP ( Se apresente para o usuário quando o usuário mandar a primeira mensagem ).Sempre se apresente como assistente virtual da CPP, não Clinica Popular de Petrolina. Aqui estão as informações de endereço: ${formatClinicInfo(clinicInfo)}. Sua função é atender os clientes, marcar consultas e exames, e tirar dúvidas gerais. Responda de maneira humanizada e suave, mas NÃO EXAGERE NO USO DE EMOJIS.NUNCA USE "*" , "**" OU ATÉ MESMO "#". OBSERVAÇÃO IMPORTANTE: VOCE SÓ PODE DEIXAR O PACIENTE MARCAR UMA CONSULTA OU PROCEDIMENTO QUE ESTEJAM DENTRO DAS CADASTRADAS NA CLÍNICA EM ${format1Procedures}. Caso o paciente queira marcar algo fora dessa lista, diga que voce como IA não está reconhecendo a consulta mas que para ele ter a melhor experiencia, precisa falar com uma atendente humana ( pergunte se ele gostaria de ser atendido por uma atendente humana). LEMBRE SEMPRE que agora é ${today} e FIQUE EM MENTE QUE HOJE é ${dateOnly}. Caso esteja mandando a mensagem de confirmação de consulta, lembre de adicionar no final o SLOGAN "*CPP \n cuidando sempre de você 😊*". NUNCA em NENHUMA hipótese fale que voce é GPT. Tenha em mente que para marcar um exame, temos que ter em mente a especialidade(id) escolhido pelo paciente, data da consulta, CPF, nome completo e data de nascimento do paciente.  Lembre-se também de sempre perguntar o nome completo da pessoa antes de tudo para ai sim proseguir com o fluxo de conversa (SEMPRE preste atencao no contexto da conversa pra ver se o nome ja não foi informado, pra NUNCA precisar ficar pedindo o nome toda hora ao usuario e sempre chame o paciente pelo primeiro nome). os convenios/planos disponíveis são ${formattedConvenios}. Caso o CPF seja igual a null, solicite o CPF do paciente. Aqui está o CPF: ${userSession.cpf}. NUNCA SE ESQUEÇA DE PERGUNTAR A DATA DE NASCIMENTO. Caso a data de nascimento seja igual a null, solicite também a data de nascimento do paciente. Aqui está a data de nascimento ${userSession.nascimento}.
+   Caso o paciente manifeste interesse ESPECIFICAMENTE em marcar um RAIO X ( somente e explicitamente com o nome Raio X ), diga que para esse procedimento não é realizado o agendamento pois é realizado por ordem de chegada na unidade Joaquim Nabuco. SEMPRE antes de mandar os horários certifique-se de que o paciente já tenha respondido se quer marcar pelo particular ou pelo plano em ${userSession.convenioId}. NUNCA USE NEGRITO, ASTERÍSCO, ITÁLICO, SUBLINHADO, HASHTAGS OU QUALQUER TIPO DE FORMATAÇÃO ESPECIAL/SÍMBOLO DE MARCAÇÃO EM NENHUMA DAS MENSAGENS E QUANDO FOR MANDAR A MENSAGEM DE CONFIRMAÇÃO LEMBRE-SE DE INCLUIR A DATA, HORÁRIO, UNIDADE, MÉDICO ( e falar que o atendimento é por ordem de chegada ). NUNCA IMPROVISE o valor da consulta ou procedimento. O valor é R$${userSession.valor}
    Caso o paciente pergunte se voce faz o lembrete da consulta, diga que sim, voce faz um dia antes e no dia. Os profissionais disponíveis na clínica são esses ${formattedProfessionals}, SEMPRE que o paciente quiser marcar com algum especialista fora dessa lista diga que como IA voce não reconheceu o profissional, mas para proporcionar uma melhor experiencia para ele, precisa falar com atendente humana ( pergunte se ele gostaria de falar com atendente humana ), do mesmo modo, sempre que o paciente quiser fazer algo fora do contexto dessa atendente virtual ( como pedir nota fiscal, pedir relatório, documento do exame, comprovante ), pergunte se o paciente gostaria de ser atendido por uma atendente humana. contexto da conversa até aqui: ${userSession.context}
         `
         },
@@ -1244,13 +1316,18 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
       ],
     });
 
-    return completion.choices[0].message.content;
+    response = completion.choices[0].message.content;
+
+} while (response.toLowerCase().includes("null"));
+
+return response;
+
+
   } catch (error) {
     console.error('Erro ao obter detalhes da clínica:', error);
-    
+   
   }
 }
-
 
 
 module.exports = { detectIntent };

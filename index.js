@@ -18,7 +18,7 @@ const { handleAfkResponse, awaitingAfkResponse2 } = require('./handlers/afk');
 const { detectIntent } = require('./chatgpt');
 const OpenAI = require('openai');
 const openai = new OpenAI({
-  apiKey: "SUA-CHAVE-API-AQUI"
+  apiKey: "sk-proj-fzzO7kJIpX1x4JeUoqatT3BlbkFJKY7h9DWf2PkhU6g4s9fI"
 });
 const app = express();
 const port = 4000;
@@ -114,11 +114,18 @@ async function getAdmins() {
 
 async function checkForNewAdmins() {
   const admins = await getAdmins();
-  for (const admin of admins) {
-    if (!existingAdmins.has(admin.id)) {
-      existingAdmins.add(admin.id);
-      await createSession(admin);
+  if (admins.length > 0) { // Se houver pelo menos um admin
+    const firstAdmin = admins[0]; // Pega apenas o primeiro admin
+    
+    if (!existingAdmins.has(firstAdmin.id)) {
+      existingAdmins.add(firstAdmin.id);
+      await createSession(firstAdmin); // Cria apenas uma sessão
+      console.log("✅ Sessão criada para o primeiro admin encontrado.");
+    } else {
+      console.log("⚠️ Sessão já criada anteriormente.");
     }
+  } else {
+    console.log("🚫 Nenhum admin encontrado.");
   }
 }
 
@@ -723,8 +730,11 @@ if (!isConnected) {
           await client.sendText(from, "✅ Você foi transferido para um atendente humano. O chatbot ficará inativo por 30 minutos.");
           return;
         }
+        console.log("to mandando pro gpt agora...")
         const response = await detectIntent(combinedMessage, adminId, userSession, client, from);
+        console.log("A resposta é essa:", response)
         userSession.context += `Assistente: ${response}\n`;
+        console.log("O contexto atualizado:", userSession.context)
 
         await client.sendText(from, response);
       } else {
