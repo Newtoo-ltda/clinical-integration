@@ -3,7 +3,7 @@ const axios = require("axios");
 const api = require('./Service/api');
 
 const openai = new OpenAI({
-  apiKey: "sk-proj-fzzO7kJIpX1x4JeUoqatT3BlbkFJKY7h9DWf2PkhU6g4s9fI"
+  apiKey: ""
 });
 
 const cancelAppointment = async (appointmentId, client, from) => {

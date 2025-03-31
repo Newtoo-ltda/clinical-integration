@@ -18,7 +18,7 @@ const { handleAfkResponse, awaitingAfkResponse2 } = require('./handlers/afk');
 const { detectIntent } = require('./chatgpt');
 const OpenAI = require('openai');
 const openai = new OpenAI({
-  apiKey: "sk-proj-fzzO7kJIpX1x4JeUoqatT3BlbkFJKY7h9DWf2PkhU6g4s9fI"
+  apiKey: ""
 });
 const app = express();
 const port = 4000;
