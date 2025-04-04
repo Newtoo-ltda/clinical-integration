@@ -544,7 +544,7 @@ const format1Procedures = procedimentosData.map(p =>
     }
     const dateOnly = getFormattedDate();
     const paramsData = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -594,7 +594,7 @@ const format1Procedures = procedimentosData.map(p =>
     }
 
     const paramsProcediment = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -635,7 +635,7 @@ const format1Procedures = procedimentosData.map(p =>
 
   // Função para extrair o ID do procedimento
       const paramsConsulta = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
+          model: "gpt-4o",
           messages: [
             {
                 role: "system",
@@ -707,7 +707,7 @@ const format1Procedures = procedimentosData.map(p =>
       }
 
     const paramsConvenio = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -754,7 +754,7 @@ const format1Procedures = procedimentosData.map(p =>
     }
 
     const paramsUnidade = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
           {
               role: "system",
@@ -825,7 +825,7 @@ const format1Procedures = procedimentosData.map(p =>
   }
     
     const paramsProfessional = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -867,7 +867,7 @@ const format1Procedures = procedimentosData.map(p =>
     }
 
     const paramsShift = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -906,7 +906,7 @@ const format1Procedures = procedimentosData.map(p =>
   let agendaData;
 
   const identificacaoValor = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     messages: [
         {
             role: "system",
@@ -986,7 +986,7 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
   
         const mensagem = ` Voce é uma assistente de uma clínica e seu papel é mandar uma mensagem para o paciente informando os horários disponíveis do profissional que ele selecionou. Aqui estão os próximos horários disponíveis:\n\n${mensagemHorarios}\n\n Peça para que o paciente escolha o melhor horário para ele.`;
         const completionHorario = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
+          model: "gpt-4o",
           messages: [
             { role: "system", content: mensagem }
           ]
@@ -1002,7 +1002,7 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
     Sugira uma data futura que funcione melhor para você.`;
     
         const completionSemHorario = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [
                 { role: "system", content: promptSemHorario }
             ]
@@ -1040,7 +1040,7 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
         `${index + 1}. 📍 ${h.unidade}: ${formatarData(h.dataAgenda, "extenso")} às ${h.horaAgenda}H com Dr. ${h.nomeProfissional}`
       ).join("\n")} Pergunte em qual unidade ele gostaria de se consultar ( sempre mostrando também  o horário e o profissional que vai realizar, conforme o modelo acima)`
           const completionHorario = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [
               { role: "system", content: promptMensagem }
             ]
@@ -1056,7 +1056,7 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
       Sugira uma data futura que funcione melhor para você.`;
       
           const completionSemHorario = await openai.chat.completions.create({
-              model: "gpt-4o-mini",
+              model: "gpt-4o",
               messages: [
                   { role: "system", content: promptSemHorario }
               ]
@@ -1073,7 +1073,7 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
     }}
 
 const paramsHora = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
+  model: "gpt-4o",
   messages: [
     {
       role: "user",
@@ -1099,7 +1099,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
 }
 
     const paramsUserName = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -1122,7 +1122,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
     }
 
     const paramsCPF = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -1143,7 +1143,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
       }
 
       const paramsDataNascimento = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -1167,7 +1167,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
         }
       
         const paramsAtendente = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
+          model: "gpt-4o",
           messages: [
             {
               role: "system",
@@ -1213,7 +1213,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
       });
       
       const marcarHorario = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -1260,7 +1260,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
           console.log("Resposta da API marcação:", response.data);
 
           const marcado = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [
               {
                 role: "system",
@@ -1300,7 +1300,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
 
 do {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
