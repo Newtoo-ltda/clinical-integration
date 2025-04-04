@@ -30,10 +30,10 @@ const agent = new (require("https").Agent)({ keepAlive: true });
 const procedimentos = async () => {
   try {
     const response = await axios.get(
-        "https://cpp.focuscw.com.br/datasnap/rest/TEntityController/valorprocedimentos", 
+        "https://cpp.focuscw.com.br/datasnap/rest/TEntityController/valorprocedimentos",
         { timeout: 120000, httpsAgent: agent }
     );
-    
+
     // Verificar se os dados foram recebidos corretamente
     if (!response.data || !Array.isArray(response.data)) {
       console.error("Dados de procedimentos inválidos ou ausentes", response.data);
@@ -42,8 +42,8 @@ const procedimentos = async () => {
 
     // Filtra os dados para conter apenas os procedimentos que possuem o campo 'convenios'
     const filteredData = response.data
-        .filter(procedimento => 
-            procedimento.grupoProcedimento !== "SEM GRUPO" && 
+        .filter(procedimento =>
+            procedimento.grupoProcedimento !== "SEM GRUPO" &&
             !/^[zZ]/.test(procedimento.nomeProcedimento) &&
             procedimento.convenios && procedimento.convenios.length > 0 // Garante que 'convenios' existe e não está vazio
         )
@@ -73,7 +73,7 @@ const procedimentos = async () => {
 const especialidades = async () => {
   try {
       const response = await axios.get(
-          "https://cpp.focuscw.com.br/datasnap/rest/TEntityController/especialidades", 
+          "https://cpp.focuscw.com.br/datasnap/rest/TEntityController/especialidades",
           { timeout: 120000, httpsAgent: agent }
       );
 
@@ -82,7 +82,7 @@ const especialidades = async () => {
           idEspecialidade,
           nomeEspecialidade
         }));
-      
+
       return filteredData;
   } catch (error) {
       console.error("Error fetching especialidades:", error);
@@ -155,25 +155,25 @@ const clinicInfo = {
 
 function formatClinicInfo(clinicInfo) {
   const { name, units } = clinicInfo.clinic;
-  
+
   let formattedInfo = `Clínica: ${name}\n`;
   formattedInfo += "Unidades:\n";
-  
+
   units.forEach(unit => {
     formattedInfo += `  - ${unit.name} (ID: ${unit.id})\n    Endereço: ${unit.address}\n`;
   });
-  
+
   return formattedInfo;
 }
 function getDayOfWeek(date) {
-  const dias = [ 
-      "SEGUNDA FEIRA", 
-      "TERÇA FEIRA", 
-      "QUARTA FEIRA", 
-      "QUINTA FEIRA", 
-      "SEXTA FEIRA", 
-      "SÁBADO",
-      "DOMINGO"
+  const dias = [
+      "DOMINGO",
+      "SEGUNDA FEIRA",
+      "TERÇA FEIRA",
+      "QUARTA FEIRA",
+      "QUINTA FEIRA",
+      "SEXTA FEIRA",
+      "SÁBADO"
   ];
   // Verifica se a data é uma instância válida de Date
   if (!(date instanceof Date)) {
@@ -190,10 +190,10 @@ const detectIntent = async (body, adminId, userSession, client, from) => {
 
   function ativarAtendimentoHumano(adminId, from) {
     if (!userSession) return;
-  
+
     userSession.atendenteHumano = true;
     console.log(`🤖 Atendimento humano ativado para ${from}. Chatbot pausado por 30 minutos.`);
-  
+
     setTimeout(() => {
         userSession.atendenteHumano = false;
         console.log(`✅ Chatbot reativado para ${from}.`);
@@ -201,9 +201,9 @@ const detectIntent = async (body, adminId, userSession, client, from) => {
   }
 
   try {
-   
+
     console.log("userSession", userSession)
-   
+
         const procedimentosData = await procedimentos();
         const especialidadesData = await especialidades();
         const conveniosData = await convenios();
@@ -213,14 +213,14 @@ const detectIntent = async (body, adminId, userSession, client, from) => {
     const conveniosInfo = p.convenios.map(c => `Convênio ${c.idConvenio} ${c.nomeConvenio}: R$${c.valor}`).join(', ');
     return `Id do procedimento: ${p.idProcedimento} - Nome: ${p.nomeProcedimento} Convenios e valores:(${conveniosInfo})`; // Incluindo o idProcedimento
 }).join('; ');
-const format1Procedures = procedimentosData.map(p => 
+const format1Procedures = procedimentosData.map(p =>
   `${p.idProcedimento} - ${p.nomeProcedimento}`
 ).join("; ");
 //console.log("Procedimentos formatados:", formattedProcedures)
         const formattedProfessionals = profissionaisData.map(pro =>
           `id ${pro.idProfissional} ${pro.nomeProfissional} 
           (${pro.especialidades.map(e => e.nomeEspecialidade).join(', ')})
-          Unidades: ${pro.horarios.map(h => `${h.idUnidade} (${h.diaSemana} das ${h.inicioHorario} às ${h.finalHorario})`).join('; ')}`  
+          Unidades: ${pro.horarios.map(h => `${h.idUnidade} (${h.diaSemana} das ${h.inicioHorario} às ${h.finalHorario})`).join('; ')}`
         ).join('; ');
         const format1Professionals = profissionaisData.map(pro => `id ${pro.idProfissional} ${pro.nomeProfissional}`).join('; ');
         const formattedConvenios = conveniosData.map(pro => `id ${pro.idConvenio} ${pro.nomeConvenio}`).join('; ');
@@ -235,26 +235,26 @@ const format1Procedures = procedimentosData.map(p =>
               const horaBrasilia = new Date(agora.getTime() - agora.getTimezoneOffset() * 60000);
               const dataAtual = horaBrasilia.toISOString().split("T")[0]; // formato YYYY-MM-DD
               const horaAtual = horaBrasilia.toTimeString().split(" ")[0]; // formato HH:MM:SS
-      
+
               //console.log("Agora:", agora);
               console.log("A data atual é", dataAtual, "e a hora atual é", horaAtual);
-      
+
               // Define se a busca será filtrada por uma data específica ou não
               const dataBusca = userSession.date || null;
               console.log(`📅 Buscando horários para a data: ${dataBusca ? dataBusca : "data mais próxima disponível"}`);
-      
+
               for (const unidade of unidades) {
                   if (unidadesSelecionadas.size >= 3) break; // Garante que teremos no máximo 3 unidades diferentes
-      
+
                   let response = await axios.get(
                       `https://cpp.focuscw.com.br/datasnap/rest/TCalendarController/consultaAgendamentoUnidadeEspecialidade/${unidade}/${userSession.procedureId}?s=true`, { timeout: 120000, httpsAgent: agent }
                       );
                   console.log(`📡 Buscando horários para especialidade ${userSession.procedureId} na unidade ${unidade}`);
-                  
+
                   if (response.data.length > 0) {
                       // Ordena os horários por data
                       let horariosDisponiveis = response.data.sort((a, b) => new Date(a.dataAgenda) - new Date(b.dataAgenda));
-      
+
                       // 🔹 Se userSession.date estiver definido, filtra apenas os horários dessa data
                       if (dataBusca) {
                           horariosDisponiveis = horariosDisponiveis.filter(horario => horario.dataAgenda === dataBusca);
@@ -264,22 +264,22 @@ const format1Procedures = procedimentosData.map(p =>
                               new Date(horario.dataAgenda) >= new Date(dataAtual)
                           );
                       }
-      
+
                       // Se ainda não há horários disponíveis, pula para a próxima unidade
                       if (horariosDisponiveis.length === 0) continue;
-      
+
                       for (const horario of horariosDisponiveis) {
                           for (const slot of horario.horarios) {
                               const diaSemanaPaciente = getDayOfWeek(horario.dataAgenda);
                             //  console.log("O dia da semana escolhido pelo paciente foi", diaSemanaPaciente)
                               // 🔹 Remover horários que já passaram no mesmo dia
                               const horarioAgenda = new Date(horario.dataAgenda + 'T' + slot.horaAgenda); // Cria o objeto Date completo
-      
+
                               if (horarioAgenda <= new Date()) {
                                   console.log(`⏳ Removendo horário passado: ${slot.horaAgenda} do dia ${dataAtual}`);
                                   continue; // Pula para o próximo horário
                               }
-      
+
                               // Busca os profissionais compatíveis para este horário e unidade
                               const profissionaisCompatíveis = profissionaisData.filter(prof =>
                                   prof.especialidades.some(esp => esp.idEspecialidade === userSession.procedureId) &&
@@ -290,7 +290,7 @@ const format1Procedures = procedimentosData.map(p =>
                                       slot.horaAgenda <= horarioProf.finalHorario
                                   )
                               );
-      
+
                               // 🔹 Verificar se o profissional realmente atende nesse horário específico
                               const profissionalValido = profissionaisCompatíveis.find(prof =>
                                   prof.horarios.some(horarioProf =>
@@ -300,7 +300,7 @@ const format1Procedures = procedimentosData.map(p =>
                                       slot.horaAgenda <= horarioProf.finalHorario
                                   )
                               );
-      
+
                               if (profissionalValido && !unidadesSelecionadas.has(unidade)) {
                                   completionHorarios.push({
                                       unidade: horario.nomeUnidade,
@@ -311,20 +311,20 @@ const format1Procedures = procedimentosData.map(p =>
                                       idProfissional: profissionalValido.idProfissional,
                                       nomeProfissional: profissionalValido.nomeProfissional
                                   });
-      
+
                                   unidadesSelecionadas.add(unidade); // Adiciona a unidade à lista de selecionadas
-      
+
                                   console.log(
                                       `📌 Unidade: ${horario.nomeUnidade} - Horário disponível: ${slot.horaAgenda} - Profissional: ${profissionalValido.nomeProfissional}`
                                   );
-      
+
                                   break; // Garante que pegamos apenas 1 horário por unidade
                               }
                           }
                       }
                   }
               }
-      
+
               console.log("✅ Horários finalizados:", completionHorarios);
               return completionHorarios;
           } catch (error) {
@@ -335,7 +335,7 @@ const format1Procedures = procedimentosData.map(p =>
       async function buscarHorariosProfissional(professionalId, procedureId) {
         try {
             console.log(`🔍 Buscando horários para Profissional: ${professionalId}, Especialidade: ${procedureId}`);
-    
+
             const unidades = [1, 2, 3]; // IDs das unidades disponíveis
             let horariosDisponiveis = [];
             const agora = new Date();
@@ -343,19 +343,19 @@ const format1Procedures = procedimentosData.map(p =>
             console.log("O horário de Brasilia é:", horaBrasilia)
             const dataAtual = horaBrasilia.toISOString().split("T")[0]; // formato YYYY-MM-DD
             const horaAtual = horaBrasilia.toTimeString().split(" ")[0]; // formato HH:MM:SS
-    
+
             const dataFiltro = userSession && userSession.date ? userSession.date : null;
-    
+
             for (const unidade of unidades) {
                 const response = await axios.get(`https://cpp.focuscw.com.br/datasnap/rest/TCalendarController/consultaAgendamentoUnidadeEspecialidadeProfissional/${unidade}/${procedureId}/${professionalId}?s=true`, { timeout: 120000, httpsAgent: agent });
-    
+
                 console.log(`✅ Buscando horários na unidade ${unidade}...`);
-    
+
                 response.data.forEach(horario => {
                     if (dataFiltro && horario.dataAgenda !== dataFiltro) {
                         return;
                     }
-    
+
                     horario.horarios.forEach(slot => {
                       const dataHoraSlot = new Date(`${horario.dataAgenda}T${slot.horaAgenda}`);
 
@@ -363,7 +363,7 @@ const format1Procedures = procedimentosData.map(p =>
                         console.log(`⏳ Ignorando horário passado: ${slot.horaAgenda} do dia ${horario.dataAgenda}`);
                         return;
                     }
-    
+
                         horariosDisponiveis.push({
                             unidade: horario.nomeUnidade,
                             idUnidade: horario.idUnidade,
@@ -374,10 +374,10 @@ const format1Procedures = procedimentosData.map(p =>
                     });
                 });
             }
-    
+
             // Ordenar por data e hora
             horariosDisponiveis.sort((a, b) => new Date(a.dataAgenda + " " + a.horaAgenda) - new Date(b.dataAgenda + " " + b.horaAgenda));
-    
+
             // Garantir que sempre retorne 3 opções
             return horariosDisponiveis.slice(0, 3);
         } catch (error) {
@@ -388,36 +388,36 @@ const format1Procedures = procedimentosData.map(p =>
         async function processaEscolhaHorario(horaUsuario) {
           try {
               console.log(`🔍 Buscando horário correspondente para: ${horaUsuario}`);
-      
+
               let horariosDisponiveis = [];
-      
+
               // 🔹 Verifica se um profissional específico foi escolhido
               if (userSession.professionalId) {
                   horariosDisponiveis = await buscarHorariosProfissional(userSession.professionalId, userSession.procedureId);
               } else {
                   horariosDisponiveis = await retornaHorario();
               }
-      
+
               console.log("📅 Horários disponíveis:", horariosDisponiveis);
-      
+
               // 🔹 Se não há horários disponíveis, retorna valores nulos
               if (!horariosDisponiveis || horariosDisponiveis.length === 0) {
                   console.log("❌ Nenhum horário disponível encontrado.");
                   return { idAgenda: null, horaAgenda: null, idUnidade: null, professionalId: null, date: null };
               }
-      
+
               // 🔹 Procura um horário correspondente
               const horarioEscolhido = horariosDisponiveis.find(h => h.horaAgenda === horaUsuario);
-      
+
               if (horarioEscolhido) {
                   console.log(`✅ Horário encontrado! ID: ${horarioEscolhido.idAgenda}, Hora: ${horarioEscolhido.horaAgenda}, Unidade: ${horarioEscolhido.idUnidade}`);
-      
+
                   // 🔹 Atualiza a sessão do usuário
                   userSession.idAgenda = horarioEscolhido.idAgenda;
                   userSession.horaAgenda = horarioEscolhido.horaAgenda;
                   userSession.idUnidade = horarioEscolhido.idUnidade;
                   userSession.date = horarioEscolhido.dataAgenda;
-      
+
                   // 🔹 Se o horário foi buscado por um profissional, mantemos esse ID
                   if (userSession.professionalId) {
                       return {
@@ -428,12 +428,12 @@ const format1Procedures = procedimentosData.map(p =>
                           date: horarioEscolhido.dataAgenda
                       };
                   }
-      
+
                   // 🔹 Caso contrário, verifica se `horarioEscolhido` tem `idProfissional`
                   if (horarioEscolhido.idProfissional) {
                       userSession.professionalId = horarioEscolhido.idProfissional;
                   }
-      
+
                   return {
                       idAgenda: horarioEscolhido.idAgenda,
                       horaAgenda: horarioEscolhido.horaAgenda,
@@ -442,26 +442,26 @@ const format1Procedures = procedimentosData.map(p =>
                       date: horarioEscolhido.dataAgenda
                   };
               }
-      
+
               console.log("❌ Nenhum horário correspondente foi encontrado.");
               return { idAgenda: null, horaAgenda: null, idUnidade: null, professionalId: null, date: null };
-      
+
           } catch (error) {
               console.error("🚨 Erro em processaEscolhaHorario:", error);
               return { idAgenda: null, horaAgenda: null, idUnidade: null, professionalId: null, date: null };
           }
       }
-      
+
       function formatarData(data, formato = "padrao") {
         if (!data) return null;
-    
+
         const meses = [
             "janeiro", "fevereiro", "março", "abril", "maio", "junho",
             "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
         ];
-    
+
         const [ano, mes, dia] = data.split("-");
-    
+
         if (formato === "extenso") {
             return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]} de ${ano}`;
         } else {
@@ -506,19 +506,19 @@ const format1Procedures = procedimentosData.map(p =>
       function formatarTelefone(telefone) {
         // Remove a parte do telefone após o '@'
         let telefoneFormatado = telefone.split('@')[0];
-      
+
         // Remove qualquer caractere não numérico (caso haja)
         telefoneFormatado = telefoneFormatado.replace(/\D/g, '');
-      
+
         // Formata para o formato desejado (se necessário)
         if (telefoneFormatado.length === 13 && telefoneFormatado.startsWith('55')) {
           telefoneFormatado = telefoneFormatado.slice(2); // Remove o código do país (55)
         }
-      
+
         return telefoneFormatado;
       }
       //const agendaData = await retornaHorario()
-      
+
 
     let context = `
     Informações da Clínica: ${clinicInfo}
@@ -532,12 +532,12 @@ const format1Procedures = procedimentosData.map(p =>
 
     const today = new Date()
     function getFormattedDate() {
-    
+
       // Extrai o ano, o mês e o dia
       const year = today.getFullYear();
       const month = String(today.getMonth() + 1).padStart(2, '0'); // Adiciona zero à esquerda
       const day = String(today.getDate()).padStart(2, '0'); // Adiciona zero à esquerda
-    
+
       // Retorna no formato "aaaa-mm-dd"
       console.log(day)
       return `${day}/${month}/${year}`;
@@ -583,7 +583,7 @@ const format1Procedures = procedimentosData.map(p =>
         },
       ],
     });
-    
+
     let data = paramsData.choices[0].message.content;
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
     if (data !== "null" && datePattern.test(data)) {
@@ -662,7 +662,7 @@ const format1Procedures = procedimentosData.map(p =>
             { role: "user", content: body }
         ]
       });
-  
+
       let consulta = paramsConsulta.choices[0].message.content.trim();
       console.log("Aqui a consulta é", consulta)
       consulta = consulta !== "null" ? Number(consulta) : null;
@@ -673,8 +673,8 @@ const format1Procedures = procedimentosData.map(p =>
           await client.addOrRemoveLabels(from, [{labelId: '7' , type:'add'}]);
           await client.sendText(from, "✅ Estamos te transferindo para uma atendente humana para finalizar o agendamento para o procedimento escolhido. Por favor, aguarde um momento.");
           ativarAtendimentoHumano(adminId, from)
-      
-          return; 
+
+          return;
         }
       } else {
         console.log('No valid consulta ID found.');
@@ -684,24 +684,24 @@ const format1Procedures = procedimentosData.map(p =>
         console.log("🛠 Debug - Entrando na função getValorByConvenio()");
         console.log("🔍 Procedimento atual:", userSession.idConsulta);
         console.log("🔍 Convênio atual:", userSession.convenioId);
-      
+
         if (!userSession.idConsulta || !userSession.convenioId) {
           console.warn("⚠️ userSession.idConsulta ou userSession.convenioId não definidos.");
           return;
         }
-      
+
         const procedure = procedimentosData?.find(p => p.idProcedimento === userSession.idConsulta);
         if (!procedure) {
           console.warn("⚠️ Nenhum procedimento encontrado para idConsulta:", userSession.idConsulta);
           return;
         }
-      
+
         const convenio = procedure?.convenios?.find(c => c.idConvenio === userSession.convenioId);
         if (!convenio) {
           console.warn("⚠️ Nenhum convênio encontrado para convenioId:", userSession.convenioId);
           return;
         }
-      
+
         userSession.valor = convenio.valor;
         console.log(`✅ Valor atualizado: R$${userSession.valor}`);
       }
@@ -736,10 +736,10 @@ const format1Procedures = procedimentosData.map(p =>
         },
       ],
     });
-    
+
     let convenioId = paramsConvenio.choices[0].message.content.trim();
     convenioId = convenioId !== "null" ? Number(convenioId) : null;
-    
+
     if (convenioId !== null && !isNaN(convenioId)) {
       userSession.convenioId = convenioId;
       console.log('Convênio ID:', convenioId); // Verifique se o ID do convênio foi extraído corretamente.
@@ -747,7 +747,7 @@ const format1Procedures = procedimentosData.map(p =>
         await client.addOrRemoveLabels(from, [{labelId: '7' , type:'add'}]);
         await client.sendText(from, "✅ Estamos te transferindo para uma atendente humana para finalizar o agendamento pelo plano de saúde. Aguarde um momento. ")
         ativarAtendimentoHumano(adminId, from)
-        return; 
+        return;
       }
     } else {
       console.log('Nenhum convênio válido encontrado.');
@@ -779,12 +779,12 @@ const format1Procedures = procedimentosData.map(p =>
   Saída esperada: 3 (o valor da unidade Tobias barreto é 3)
   Unidades disponíveis: ${formattedUnidades}
   fique atento ao preenchimento da unidade em ${userSession.idUnidade} e ao contexto ${userSession.context}`
-  
+
           },
           { role: "user", content: body },
       ],
   });
-  
+
   console.log("Unidade detectada:", paramsUnidade.choices[0].message.content);
   let unidadeId = paramsUnidade.choices[0].message.content.trim();
   console.log("Unidade detectada:", unidadeId)
@@ -800,10 +800,10 @@ const format1Procedures = procedimentosData.map(p =>
   if (userSession.convenioId !== null && userSession.convenioId !== undefined && userSession.idUnidade) {
     try {
       console.log("🚀 Entrou no bloco de verificação!");
-  
+
       if (userSession.convenioId == 0) {
         console.log("📌 convenioId é 0. Atualizando para unidade correta...");
-  
+
         if (userSession.idUnidade == 1) {
           userSession.convenioId = 66;
         } else if (userSession.idUnidade == 2) {
@@ -811,7 +811,7 @@ const format1Procedures = procedimentosData.map(p =>
         } else if (userSession.idUnidade == 3) {
           userSession.convenioId = 79;
         }
-  
+
         console.log("✅ convenioId atualizado para:", userSession.convenioId);
         getValorByConvenio(); // Agora deve ser chamado
       } else {
@@ -823,7 +823,7 @@ const format1Procedures = procedimentosData.map(p =>
   } else {
     console.log("⚠️ userSession.convenioId ou userSession.idUnidade estão indefinidos. Pulando atualização.");
   }
-    
+
     const paramsProfessional = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -847,7 +847,7 @@ const format1Procedures = procedimentosData.map(p =>
       ],
     });
 
-    let professionalId = paramsProfessional.choices[0].message.content.trim(); 
+    let professionalId = paramsProfessional.choices[0].message.content.trim();
     //console.log("📋 Lista de profissionais carregada:", JSON.stringify(profissionaisData, null, 2), "Sucesso");
     console.log("🧐 Profissional identificado:", professionalId);
     if (professionalId !== null) {
@@ -897,8 +897,8 @@ const format1Procedures = procedimentosData.map(p =>
     if (shift !== "null") {
       userSession.shift = shift
     }
-   
-  
+
+
   let dayOfToday = getDayOfWeek(new Date() - 1);
   console.log(new Date())
   console.log("Today is :"+ dayOfToday)     ;
@@ -980,10 +980,10 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
       agendaData = await buscarHorariosProfissional(userSession.professionalId, userSession.procedureId);
       console.log("Horários disponíveis p/ profissional desejado:", agendaData);
       if (agendaData.length > 0) {
-        const mensagemHorarios = agendaData.slice(0, 3).map((h, index) => 
+        const mensagemHorarios = agendaData.slice(0, 3).map((h, index) =>
           `${index + 1}. 📍 Unidade: ${h.unidade}\n📅 Data: ${formatarData(h.dataAgenda, "extenso")}\n⏰ Horário: ${h.horaAgenda}H`
       ).join("\n\n");
-  
+
         const mensagem = ` Voce é uma assistente de uma clínica e seu papel é mandar uma mensagem para o paciente informando os horários disponíveis do profissional que ele selecionou. Aqui estão os próximos horários disponíveis:\n\n${mensagemHorarios}\n\n Peça para que o paciente escolha o melhor horário para ele.`;
         const completionHorario = await openai.chat.completions.create({
           model: "gpt-4o",
@@ -1000,7 +1000,7 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
         const promptSemHorario = `Diga SEMPRE que Infelizmente, não encontramos horários disponíveis para a data escolhida.  
     Por favor, escolha uma nova data para verificarmos a disponibilidade.  
     Sugira uma data futura que funcione melhor para você.`;
-    
+
         const completionSemHorario = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
@@ -1017,14 +1017,14 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
           await client.sendText(from, "✅ Estamos te transferindo para uma atendente humana para finalizar o agendamento para o procedimento escolhido. Por favor, aguarde um momento.");
           ativarAtendimentoHumano(adminId, from)
 
-          return; 
+          return;
     }
     }catch(error){console.log("❌ Erro ao buscar horários disponíveis p/ profissional desejado:", error)}
   }
-  
+
   if (userSession.procedureId && !userSession.idUnidade && !userSession.professionalId) {
     console.log("Buscando horários disponíveis...");
-    
+
    try{
     if (userSession.idUnidade) {
       console.log(`✅ Unidade já escolhida: ${userSession.idUnidade}. Pulando nova busca.`);
@@ -1054,7 +1054,7 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
           const promptSemHorario = `Diga SEMPRE que Infelizmente, não encontramos horários disponíveis para a data escolhida.  
       Por favor, escolha uma nova data para verificarmos a disponibilidade.  
       Sugira uma data futura que funcione melhor para você.`;
-      
+
           const completionSemHorario = await openai.chat.completions.create({
               model: "gpt-4o",
               messages: [
@@ -1066,7 +1066,7 @@ return "Para uma melhor experiência e precisão estamos te encaminhando para um
           await client.addOrRemoveLabels(from, [{labelId: '7' , type:'add'}]);
           await client.sendText(from, "✅ Estamos te transferindo para uma atendente humana para finalizar o agendamento para o procedimento escolhido. Por favor, aguarde um momento.");
           ativarAtendimentoHumano(adminId, from)
-          return; 
+          return;
       }
     } catch (error) {
         console.error("Erro ao buscar horários:", error);
@@ -1081,7 +1081,7 @@ const paramsHora = await openai.chat.completions.create({
       
       Fluxo de conversa:
       ${userSession.context}
-      ` 
+      `
       },
       {
         role: "user",
@@ -1158,14 +1158,14 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
           },
         ],
       });
-      
+
       let dataNascimento = paramsDataNascimento.choices[0].message.content.trim();
       if (dataNascimento !== "null") {
           userSession.nascimento = dataNascimento; // Formato 'yyyy-mm-dd'
         } else {
           console.log("Data inválida detectada:", dataNascimento);
         }
-      
+
         const paramsAtendente = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
@@ -1193,9 +1193,9 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
             },
           ],
         });
-        
+
         let desejaAtendente = paramsAtendente.choices[0].message.content.trim();
-        
+
         if (desejaAtendente === "sim") {
           await client.addOrRemoveLabels(from, [{labelId: '7' , type:'add'}]);
           await client.sendText(from, "✅ Você foi transferido para uma atendente humana. Aguarde um momento.");
@@ -1203,15 +1203,15 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
           return;
         }
 
-      
+
 
 
     if (userSession.name && userSession.idUnidade && userSession.idAgenda && userSession.date && userSession.procedureId && userSession.nascimento && userSession.agendado == false) {
-      
+
       const axiosInstance = axios.create({
         timeout: 50000, // Aumentando o timeout para 15 segundos
       });
-      
+
       const marcarHorario = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -1279,7 +1279,7 @@ if (hora && /^\d{2}:\d{2}:\d{2}$/.test(hora)) {
           console.log("o userSession:", userSession)
           console.log("Agendamento marcado com sucesso")
           console.log("Resposta da API:", marcado.data.choices[0].message.content);
-         
+
 
           return marcado.choices[0].message.content;
         } catch (error) {
@@ -1325,7 +1325,7 @@ return response;
 
   } catch (error) {
     console.error('Erro ao obter detalhes da clínica:', error);
-   
+
   }
 }
 
