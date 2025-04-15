@@ -167,13 +167,13 @@ function formatClinicInfo(clinicInfo) {
 }
 function getDayOfWeek(date) {
     const dias = [
-        "DOMINGO",
         "SEGUNDA FEIRA",
         "TERÇA FEIRA",
         "QUARTA FEIRA",
         "QUINTA FEIRA",
         "SEXTA FEIRA",
-        "SÁBADO"
+        "SÁBADO",
+        "DOMINGO",
     ];
     // Verifica se a data é uma instância válida de Date
     if (!(date instanceof Date)) {
@@ -247,7 +247,7 @@ const detectIntent = async (body, adminId, userSession, client, from) => {
                     if (unidadesSelecionadas.size >= 3) break; // Garante que teremos no máximo 3 unidades diferentes
 
                     let response = await axios.get(
-                        `https://cpp.focuscw.com.br/datasnap/rest/TCalendarController/consultaAgendamentoUnidadeEspecialidade/${unidade}/${userSession.procedureId}?s=true`, { timeout: 120000, httpsAgent: agent }
+                        `https://cpp.focuscw.com.br/datasnap/rest/TCalendarController/consultaAgendamentoUnidadeEspecialidade/${unidade}/${userSession.procedureId}`, { timeout: 120000, httpsAgent: agent }
                     );
                     console.log(`📡 Buscando horários para especialidade ${userSession.procedureId} na unidade ${unidade}`);
 
@@ -256,6 +256,8 @@ const detectIntent = async (body, adminId, userSession, client, from) => {
                         let horariosDisponiveis = response.data.sort((a, b) => new Date(a.dataAgenda) - new Date(b.dataAgenda));
 
                         // 🔹 Se userSession.date estiver definido, filtra apenas os horários dessa data
+                        console.log('DATA BUSCA:')
+                        console.log(dataBusca);
                         if (dataBusca) {
                             horariosDisponiveis = horariosDisponiveis.filter(horario => horario.dataAgenda === dataBusca);
                         } else {
@@ -271,7 +273,7 @@ const detectIntent = async (body, adminId, userSession, client, from) => {
                         for (const horario of horariosDisponiveis) {
                             for (const slot of horario.horarios) {
                                 const diaSemanaPaciente = getDayOfWeek(horario.dataAgenda);
-                                //  console.log("O dia da semana escolhido pelo paciente foi", diaSemanaPaciente)
+                                console.log("O dia da semana escolhido pelo paciente foi", diaSemanaPaciente)
                                 // 🔹 Remover horários que já passaram no mesmo dia
                                 const horarioAgenda = new Date(horario.dataAgenda + 'T' + slot.horaAgenda); // Cria o objeto Date completo
 
@@ -375,11 +377,22 @@ const detectIntent = async (body, adminId, userSession, client, from) => {
                 }
 
                 console.log(horariosDisponiveis);
-                // Ordenar por data e hora
                 horariosDisponiveis.sort((a, b) => new Date(a.dataAgenda + " " + a.horaAgenda) - new Date(b.dataAgenda + " " + b.horaAgenda));
 
-                // Garantir que sempre retorne 3 opções
-                return horariosDisponiveis.slice(0, 3);
+                const resultados = [];
+                const datasJaAdicionadas = new Set();
+
+                for (const item of horariosDisponiveis) {
+                    if (!datasJaAdicionadas.has(item.dataAgenda)) {
+                        resultados.push(item);
+                        datasJaAdicionadas.add(item.dataAgenda);
+                    }
+
+                    if (resultados.length === 3) break;
+                }
+
+                return resultados;
+
             } catch (error) {
                 console.error("❌ Erro ao buscar horários do profissional:", error);
                 return [];
