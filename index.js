@@ -104,7 +104,7 @@ async function transcribeAudio(audioBase64) {
 
 async function getAdmins() {
     try {
-        const response = await axios.get('https://newtoo.space/admin', {
+        const response = await axios.get('http://localhost:3000/admin', {
             headers: {
                 Authorization: `Bearer ${process.env.API_TOKEN}`,
             },
@@ -128,7 +128,6 @@ async function checkForNewAdmins() {
             console.log("✅ Sessão criada para o primeiro admin encontrado.");
         } else {
             console.log("⚠️ Sessão já criada anteriormente.");
-            await verificarEtiquetasUsuario(firstAdmin.id);
         }
     } else {
         console.log("🚫 Nenhum admin encontrado.");
@@ -573,7 +572,7 @@ app.post('/confirm-appointment', async (req, res) => {
     }
 });
 
-async function verificarEtiquetasUsuario(adminId) {
+async function verificarEtiquetasUsuario(adminId, userSession, from, labels) {
     const client = adminSessions[adminId];
 
     if (!client) {
@@ -581,24 +580,9 @@ async function verificarEtiquetasUsuario(adminId) {
         return;
     }
 
-    const users = userSessions[adminId] || {};
-
-    for (const from in users) {
-        if (users[from].atendenteHumano) {
-            try {
-                const labels = await client.getAllLabels(from);
-                const temEtiquetaHumano = labels.some(label => label.id === '7');
-
-                if (!temEtiquetaHumano) {
-                    users[from].atendenteHumano = false;
-                    console.log(`✅ Etiqueta removida! Atendimento humano desativado para ${from}`);
-                    await client.sendText(from, 'Estamos de volta! Agora você pode continuar com o chatbot 🤖✨');
-                }
-            } catch (err) {
-                console.error(`Erro ao verificar etiquetas de ${from}:`, err);
-            }
-        }
-    }
+    const temEtiquetaHumano = labels.includes('7');
+    userSession.atendenteHumano = temEtiquetaHumano;
+    console.log(`✅ Atendimento humano marcado como ${temEtiquetaHumano} para ${from}`);
 }
 
 
@@ -624,7 +608,10 @@ const startListeningToMessages = (adminId, client) => {
         console.log(JSON.stringify(message, null, 2));
 
         const { from, body, isGroupMsg, type } = message;
-        console.log(type)
+        let labels = message['sender']['labels'];
+        
+       
+        
         let messageContent = body;
 
         if (message.from === "status@broadcast") {
@@ -692,6 +679,8 @@ const startListeningToMessages = (adminId, client) => {
 
 
             const userSession = userSessions[adminId][from];
+
+            await verificarEtiquetasUsuario(adminId, userSession, from, labels);
 
             if (userSession.atendenteHumano) {
                 console.log(`🛑 Atendimento humano ativo para ${from}. Ignorando mensagens.`);

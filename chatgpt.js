@@ -247,7 +247,7 @@ const detectIntent = async (body, adminId, userSession, client, from) => {
                     if (unidadesSelecionadas.size >= 3) break; // Garante que teremos no máximo 3 unidades diferentes
 
                     let response = await axios.get(
-                        `https://cpp.focuscw.com.br/datasnap/rest/TCalendarController/consultaAgendamentoUnidadeEspecialidade/${unidade}/${userSession.procedureId}`, { timeout: 120000, httpsAgent: agent }
+                        `https://cpp.focuscw.com.br/datasnap/rest/TCalendarController/consultaAgendamentoUnidadeEspecialidade/${unidade}/${userSession.procedureId}?s=true`, { timeout: 120000, httpsAgent: agent }
                     );
                     console.log(`📡 Buscando horários para especialidade ${userSession.procedureId} na unidade ${unidade}`);
 
