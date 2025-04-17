@@ -167,13 +167,13 @@ function formatClinicInfo(clinicInfo) {
 }
 function getDayOfWeek(date) {
     const dias = [
+        "DOMINGO",
         "SEGUNDA FEIRA",
         "TERÇA FEIRA",
         "QUARTA FEIRA",
         "QUINTA FEIRA",
         "SEXTA FEIRA",
         "SÁBADO",
-        "DOMINGO",
     ];
     // Verifica se a data é uma instância válida de Date
     if (!(date instanceof Date)) {
