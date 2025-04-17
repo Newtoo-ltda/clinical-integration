@@ -104,7 +104,7 @@ async function transcribeAudio(audioBase64) {
 
 async function getAdmins() {
     try {
-        const response = await axios.get('http://localhost:3000/admin', {
+        const response = await axios.get('https://newtoo.space/admin', {
             headers: {
                 Authorization: `Bearer ${process.env.API_TOKEN}`,
             },
